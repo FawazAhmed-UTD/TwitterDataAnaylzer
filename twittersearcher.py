@@ -28,7 +28,7 @@ def twitterSearcher(searchQuery):
 	numInc+=1
 
 def scheduleIteration(searchQuery, iterations):
-	global numIncy
+	global numInc
 	schedule.every(2).minutes.do(twitterSearcher, (searchQuery + " Accident"))
 	while numInc < iterations:
 		schedule.run_pending()
