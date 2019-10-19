@@ -1,39 +1,42 @@
 from twitter import *
-import json
-import pprint
+import tweepy, schedule, time, json, pprint
 from geopy.geocoders import Nominatim
+numInc = 0
 
 def geoLocator(latitude, longitude):
 	geolocator = Nominatim(user_agent = "Twitter Searcher")
 	coordinates = (str(latitude), str(longitude))
 	location = geolocator.reverse(coordinates)
 	print(location.address)
-	#print(location.raw)
 	locationPrecise = [x.strip() for x in location.address.split(',')]
-	print(locationPrecise[0])
-	return;
+	return locationPrecise[1];
 
 def twitterSearcher(searchQuery):
+	global numInc
 	accessToken = "3939721633-EJIfdOWAcuWVjwFpsQp7Qs3P5NNyh3q7ihpC9ld"
 	accessToken_Secret = "wyQ9uA8vZ02Ni2fimTJegOSdIJTO95ttIJWWkDZUxl5cZ"
 	apiKey = "8VQzfyd9REr8gO2nesBRkJTru"
 	apiKey_Secret = "2CS4iYIdBq6SNSmTJCWUFJuhOjAkN4b68bXkOIS7nYouuh7r8n"
-	twitter = Twitter(auth = OAuth(accessToken, accessToken_Secret, apiKey, apiKey_Secret))
-	query = twitter.search.tweets(q = searchQuery)
-	#print("Search complete (%.3f seconds)" % (query["search_metadata"]["completed_in"]))
-	#with open('out.txt', 'w') as outfile:
-	#	print("\nData collected on", "\"", searchQuery, "\"\n", file=outfile)
-	#	for result in query["statuses"]:
-	#		print((result["created_at"], result["user"]["screen_name"], result["text"]), '\n', file= outfile)
-	with open('output.json','w') as file:
-		for result in query["statuses"]:
-			json.dump((result["created_at"], result["user"]["screen_name"], result["text"]), file)
+	authenticator = tweepy.OAuthHandler(apiKey, apiKey_Secret)
+	api = tweepy.API(authenticator)
+	results = api.search(q=searchQuery, lang = "en")
+	with open('output.json', 'w') as file:
+		for tweet in results:
+			json.dump((tweet.user.screen_name,tweet.text), file)
 			file.write('\n')
-	#print((result["created_at"], result["user"]["screen_name"], result["text"]))#!/usr/bin/env python
+	#print(tweet.user.screen_name,"Tweeted:",tweet.text)
+	numInc+=1
+
+def scheduleIteration(searchQuery, iterations):
+	global numIncy
+	schedule.every(2).minutes.do(twitterSearcher, (searchQuery + " Accident"))
+	while numInc < iterations:
+		schedule.run_pending()
+		time.sleep(1)
 
 if __name__ == '__main__':
 	lati = input("Enter latitude: ")
 	long = input("Enter longitude: ")
-	actor = "Obama"
-	geoLocator(lati,long)
-	twitterSearcher(actor)
+	searchQuery = geoLocator(lati,long)
+	iterations = int(input("Enter how many times before schedule stops "))
+	scheduleIteration(searchQuery, iterations)
