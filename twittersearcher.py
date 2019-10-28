@@ -18,7 +18,7 @@ def authenticate(): #authenticates with tweepy
 #it then updates the first set of tweets on whether it was tweeted in the location or not
 #this is because searching with location and a query in tweepy does not give tweets from users who may have tweeted about the accident but are not in the general radius.
 def compareResults(results_without_location, results_with_location):
-	global radius
+	global radius, last_tweetID
 	i = 0
 	tweets_set1 = []
 	tweets_set2 = []
@@ -26,6 +26,7 @@ def compareResults(results_without_location, results_with_location):
 	tweetedOut = {'Not tweeted within' : str(radius) + ' miles'}
 	for tweet in results_without_location: 						#stores tweets with out location in a dict
 		tweets = {'Username' : tweet.user.screen_name, 'Tweet' : tweet.text}
+		last_tweetID = tweet.id
 		tweets_set1.append(tweets)
 		i+=1
 	i = 0
@@ -42,23 +43,58 @@ def compareResults(results_without_location, results_with_location):
 				break
 			else:
 				tweets_set1[x].update(tweetedOut)
-	storeResults(tweets_set1)
+
+#	storeResults(tweets_set1)
+	mongoDB(tweets_set1)
+
+def mongoDB(results):	#Stores in mongodb
+	client = pymongo.MongoClient('mongodb://localhost:27017/')
+	dataBase = client['TwitterSearcher']
+	collection = dataBase["Tweets Data"]
+	oldData = []
+	tweets = []
+	for x in collection.find():
+		oldData.append(x)
+	for i in oldData:
+		if "_id" in i:
+			del i["_id"]
+	for i in oldData:
+		if i not in tweets:
+			tweets.append(i)
+	for i in results:
+		if i not in tweets:
+			tweets.append(i)
+#	pprint(tweets)
+	delete = collection.delete_many({})
+	print(str(len(tweets)))
+	for i in tweets:
+		tweet = collection.insert_one(i)
+#	print(dataBase.list_collection_names())
 
 def storeResults(results): #Stores into a json
-	length = len(results)
+	oldData = []
+	tweets = []
+	with open('output.json') as file:
+		for tweet in file:
+			oldData.append(json.loads(tweet))
+	for i in oldData:
+		if i not in tweets:
+			tweets.append(i)
+	for i in results:
+		if i not in tweets:
+			tweets.append(i)
 	with open('output.json', 'w') as file:
-		for x in range(length):
-			json.dump(results[x], file)
+		for x in range(len(tweets)):
+			json.dump(tweets[x], file)
 			file.write('\n')
-
 def search_without_location(searchQuery): #searches with out a location
-	results = authenticate().search(q=searchQuery, lang = "en", count = 10)
+	results = authenticate().search(q=searchQuery, lang = "en", count = 100)
 	return results
 
 def search_with_location(latitude, longitude, searchQuery): #searches with coordinates and has a radius that is changeable
 	global radius
 	location = str(latitude) + "," + str(longitude) + "," + str(radius) + "mi"
-	locationResults = authenticate().search(q = searchQuery, geocode = location, land = "en", count = 10)
+	locationResults = authenticate().search(q = searchQuery, geocode = location, land = "en", count = 100)
 	return locationResults
 
 def geoLocator(latitude, longitude): #reverse geolocator for the coords
@@ -66,27 +102,38 @@ def geoLocator(latitude, longitude): #reverse geolocator for the coords
 	coordinates = (str(latitude), str(longitude))
 	location = geolocator.reverse(coordinates)
 	locationPrecise = [x.strip() for x in location.address.split(',')]
-	return locationPrecise[3];
+	print(locationPrecise)
+	print("    0		1		2	3	 4 	     5")
+	precision = int(input("how precise "))
+	return locationPrecise[precision];
 
-#evertime this function is called by the schedule fuction it adds 1 so we can keep track of how many times it program should run in the schedule before it stops
+#everytime this function is called by the schedule fuction it adds 1 so we can keep track of how many times it program should run in the schedule before it stops
 def twitterSearcher(latitude, longitude, searchQuery):
 	global numInc
 	compareResults(search_without_location(searchQuery), search_with_location(latitude, longitude, searchQuery))
 	numInc+=1
-
+	print("Status: " + str(numInc))
 def scheduleIteration(latitude, longitude, searchQuery, iterations):	#schedule which calls the twitter searcher function as well
 	global numInc
 	schedule.every(2).minutes.do(twitterSearcher, latitude, longitude, searchQuery)
-	while numInc < iterations:
+	if iterations == -1:
 		schedule.run_pending()
 		time.sleep(1)
+	else:
+		while numInc < iterations:
+			schedule.run_pending()
+			time.sleep(1)
 
 if __name__ == '__main__':
 #	lati = input("Enter latitude: ")
 #	long = input("Enter longitude: ")
 	lati = 6.5244
 	long = 3.3792 #lagos coordinates
-#	searchQuery = geoLocator(lati,long) + " Accident -filter:retweets" 	#-filter:retweets removes retweets
-	searchQuery = "Lagos Accident -filter:retweets"
-	twitterSearcher(lati, long, searchQuery) 				#remove or comment this line and just used the schedule function to start the program
-#	iterations = int(input("Enter how many times before schedule stops "))
+#	print(geoLocator(lati,long))
+	searchQuery = geoLocator(lati,long) + " Accident -filter:retweets" 	#-filter:retweets removes retweets
+	print(searchQuery)
+#	searchQuery = "Accident -filter:retweets"
+#	twitterSearcher(lati, long, searchQuery) 				#remove or comment this line and just used the schedule function to start the program
+	iterations = int(input("Enter how many times before schedule stops "))
+	scheduleIteration(lati, long, searchQuery, iterations)
+
