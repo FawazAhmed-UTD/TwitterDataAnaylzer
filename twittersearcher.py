@@ -89,41 +89,33 @@ def compareResults(results_without_location, results_with_location):
 			x.update(tweetedIn)
 		else:
 			x.update(tweetedOut)
-
-#	for x in range(len1):
-#		for y in range(len2):
-#			if tweets_set1[x] == tweets_set2[y]:
-#				tweets_set1[x].update(tweetedIn)
-#				break
-#			else:
-#				tweets_set1[x].update(tweetedOut)
-
 	storeResults(tweets_set1)
-#	mongoDB(tweets_set1)
+	mongoDB(tweets_set1)
 
 def mongoDB(results):	#Stores in mongodb
 	client = pymongo.MongoClient('mongodb://localhost:27017/')
 	dataBase = client['TwitterSearcher']
-	collection = dataBase["Tweets Data"]
+	new_collection = dataBase["Tweets Data"]
+	old_collection = dataBase["Old Tweets Data"]
 	oldData = []
 	tweets = []
-
-	for x in collection.find():
+	for x in old_collection.find():
 		oldData.append(x)
 	for i in oldData:
 		if "_id" in i:
 			del i["_id"]
-	for i in oldData:
-		if i not in tweets:
-			tweets.append(i)
+#	pprint(oldData)
 	for i in results:
-		if i not in tweets:
+		if i not in oldData:
 			tweets.append(i)
-#	pprint(tweets)
-	delete = collection.delete_many({})
+	pprint(tweets)
+	for i in tweets:
+		new_collection.insert_one(i)
+	delete = new_collection.delete_many({})
 	print(str(len(tweets)))
 	for i in tweets:
-		tweet = collection.insert_one(i)
+#		tweet = new_collection.insert_one(i)
+		pprint(i)
 		#	print(dataBase.list_collection_names())
 
 def storeResults(results): #Stores into a json
@@ -169,7 +161,7 @@ def geoLocator(latitude, longitude): #reverse geolocator for the coords
 def twitterSearcher(latitude, longitude, searchQuery):
 	global numInc
 	compareResults(search_without_location(searchQuery), search_with_location(latitude, longitude, searchQuery))
-	get_new_data()
+#	get_new_data()
 	numInc+=1
 	print("Status: " + str(numInc))
 
