@@ -29,7 +29,7 @@ def authenticate():  # authenticates with tweepy
 
 
 def compareResults(results_without_location, results_with_location):  # removes dups
-    global radius, lastTweet_location, lastTweet_no_location
+    global radius
     city = {'City': location}
     tweets_set1 = []
     tweets_set2 = []
@@ -49,13 +49,13 @@ def compareResults(results_without_location, results_with_location):  # removes 
     # print(len(store_this_set))
 
     store_this_set = tweets_set1 + tweets_set2
-    # store_results_in_file(store_this_set)
+    store_results_in_file(store_this_set)
     mongoDB(store_this_set)
 
 
 def get_tweet_attributes(tweets_raw):  # gets attributes from tweets and its user
     tweets_raw_data = {'id_str': tweets_raw.id_str,
-                       'text': tweets_raw.text,
+                       'text': tweets_raw.full_text,
                        'source': tweets_raw.source,
                        'coordinates': tweets_raw.coordinates,
                        'favorite_count': tweets_raw.favorite_count,
@@ -160,14 +160,14 @@ def store_results_in_file(results):  # Stores into a json and csv
 
 
 def search_without_location(searchQuery):  # searches with out a location
-    results = authenticate().search(q=searchQuery, lang="en", count=100)
+    results = authenticate().search(q=searchQuery, lang="en", count=100, tweet_mode="extended")
     return results
 
 
 def search_with_location(latitude, longitude):  # searches with coordinates and has a radius that is changeable
     tweet_search_location = str(latitude) + "," + str(longitude) + "," + str(radius) + "mi"
     results = authenticate().search(q="Car Accident -filter:retweets", geocode=tweet_search_location, lang="en",
-                                    count=100)
+                                    count=100, tweet_mode="extended")
     return results
 
 
