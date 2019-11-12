@@ -6,7 +6,8 @@ import schedule
 import time
 import tweepy
 import csv
-from bson import ObjectId
+import datetime
+from bson import ObjectId, json_util
 from elasticsearch import Elasticsearch
 from geopy.geocoders import Nominatim
 from pymongo import MongoClient
@@ -50,32 +51,36 @@ def compareResults(results_without_location, results_with_location):  # removes 
 
     store_this_set = tweets_set1 + tweets_set2
     store_results_in_file(store_this_set)
-    mongoDB(store_this_set)
+    # mongoDB(store_this_set)
 
 
-def get_tweet_attributes(tweets_raw):  # gets attributes from tweets and its user
+def get_tweet_attributes(tweets_raw):  # gets attributes from tweets and its user\
+    pprint(tweets_raw)
     tweets_raw_data = {'id_str': tweets_raw.id_str,
+                       'created_at': str(tweets_raw.created_at),
                        'text': tweets_raw.full_text,
                        'source': tweets_raw.source,
                        'coordinates': tweets_raw.coordinates,
                        'favorite_count': tweets_raw.favorite_count,
                        'entities': tweets_raw.entities,
                        'lang': tweets_raw.lang,
-                       'user': {'id': tweets_raw.user.id,
-                                'name': tweets_raw.user.name,
-                                'screen_name': tweets_raw.user.screen_name,
-                                'location': tweets_raw.user.location,
-                                'url': tweets_raw.user.url,
-                                'description': tweets_raw.user.description,
-                                'verified': tweets_raw.user.verified,
-                                'followers_count': tweets_raw.user.followers_count,
-                                'friends_count': tweets_raw.user.friends_count,
-                                'listed_count': tweets_raw.user.listed_count,
-                                'favourites_count': tweets_raw.user.favourites_count,
-                                'statuses_count': tweets_raw.user.statuses_count,
-                                'profile_image_url_https': tweets_raw.user.profile_image_url_https,
-                                'default_profile': tweets_raw.user.default_profile,
-                                'default_profile_image': tweets_raw.user.default_profile_image}}
+                       'place': str(tweets_raw.place),
+                       'user': {
+                            'id': tweets_raw.user.id,
+                            'name': tweets_raw.user.name,
+                            'screen_name': tweets_raw.user.screen_name,
+                            'location': tweets_raw.user.location,
+                            'url': tweets_raw.user.url,
+                            'description': tweets_raw.user.description,
+                            'verified': tweets_raw.user.verified,
+                            'followers_count': tweets_raw.user.followers_count,
+                            'friends_count': tweets_raw.user.friends_count,
+                            'listed_count': tweets_raw.user.listed_count,
+                            'favourites_count': tweets_raw.user.favourites_count,
+                            'statuses_count': tweets_raw.user.statuses_count,
+                            'profile_image_url_https': tweets_raw.user.profile_image_url_https,
+                            'default_profile': tweets_raw.user.default_profile,
+                            'default_profile_image': tweets_raw.user.default_profile_image}}
     return tweets_raw_data
 
 
