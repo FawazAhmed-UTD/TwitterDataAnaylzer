@@ -55,10 +55,11 @@ def compareResults(results_without_location, results_with_location):  # removes 
 
 
 def get_tweet_attributes(tweets_raw):  # gets attributes from tweets and its user\
-    pprint(tweets_raw)
+    # pprint(tweets_raw)
     tweets_raw_data = {'id_str': tweets_raw.id_str,
                        'created_at': str(tweets_raw.created_at),
                        'text': tweets_raw.full_text,
+                       'tweet url': "https://twitter.com/" + str(tweets_raw.user.screen_name) + "/status/" + str(tweets_raw.id),
                        'source': tweets_raw.source,
                        'coordinates': tweets_raw.coordinates,
                        'favorite_count': tweets_raw.favorite_count,
