@@ -50,8 +50,8 @@ def compareResults(results_without_location, results_with_location):  # removes 
     # print(len(store_this_set))
 
     store_this_set = tweets_set1 + tweets_set2
-    store_results_in_file(store_this_set)
-    # mongoDB(store_this_set)
+    #store_results_in_file(store_this_set)
+    mongoDB(store_this_set)
 
 
 def get_tweet_attributes(tweets_raw):  # gets attributes from tweets and its user\
@@ -59,7 +59,7 @@ def get_tweet_attributes(tweets_raw):  # gets attributes from tweets and its use
     tweets_raw_data = {'id_str': tweets_raw.id_str,
                        'created_at': str(tweets_raw.created_at),
                        'text': tweets_raw.full_text,
-                       'tweet url': "https://twitter.com/" + str(tweets_raw.user.screen_name) + "/status/" + str(tweets_raw.id),
+                       'tweet_url': "https://twitter.com/" + str(tweets_raw.user.screen_name) + "/status/" + str(tweets_raw.id),
                        'source': tweets_raw.source,
                        'coordinates': tweets_raw.coordinates,
                        'favorite_count': tweets_raw.favorite_count,
@@ -100,7 +100,7 @@ def mongoDB(results):  # Stores in mongodb
     for i in results:
         if i not in old_data:
             collection.insert_one(i)
-    # get_new_data()
+    get_new_data()
 
 
 def __get_mongo_connection():
