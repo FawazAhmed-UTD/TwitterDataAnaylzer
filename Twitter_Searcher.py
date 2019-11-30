@@ -204,8 +204,9 @@ def scheduleIteration(iterations, cities):  # scheduler
     schedule.every(2).minutes.do(twitterSearcher, cities)
 
     if iterations == -1:
-        schedule.run_pending()
-        time.sleep(1)
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
     else:
         while numInc < iterations:
             schedule.run_pending()
