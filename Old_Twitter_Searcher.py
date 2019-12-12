@@ -14,7 +14,7 @@ def get_tweets(longitude, latitude, date_time):
         # tweetCriteria = got.manager.TweetCriteria().setSince(str(_date)).setUntil(date).setQuerySearch("Accident") \
         #     .setNear(str(longitude) + ", " + str(latitude)).setWithin("5mi").setMaxTweets(100)  # searches
         tweetCriteria = got.manager.TweetCriteria().setSince(str(_date)).setUntil(date).setQuerySearch("Accident") \
-            .setMaxTweets(100)  # searches
+            .setMaxTweets(100)  # temporarily searching with out coords
         tweets = got.manager.TweetManager.getTweets(tweetCriteria)
         for tweet in tweets:
             if is_time_between(time, str(tweet.time)[11:19], midnight=True):
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         data = json.load(read)
 
     for x in range(len(data)):
-        try:
+        try: # some data does not have location/time/id/or date
             location = data[x]['maps_output'][0]['geometry']['location']
             time = data[x]['time']
             incident_id = data[x]['id']
