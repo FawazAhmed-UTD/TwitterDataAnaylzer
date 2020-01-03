@@ -1,100 +1,117 @@
 import GetOldTweets3 as got
-from datetime import datetime, timedelta
+import tweepy
 import json
+import pymongo
+
+'''
+Twitter Authentication
+'''
+access_token = "XXXX"
+access_token_Secret = "XXXX"
+consumer_api_key = "XXXX"
+consumer_api_key_secret = "XXXX"
+PRODUCT = 'XXXX'
+LABEL = 'XXXX'
+'''
+MongoDB
+'''
+client = pymongo.MongoClient('mongodb://localhost:XXXX/')
+data_base = client['XXXX']
+collection = data_base["XXXX"]
 
 
-def get_tweets(longitude, latitude, date_time):
-    untilDate = datetime.strptime(str(date_time)[0:10], '%Y-%m-%d') + timedelta(days=1)
-    sinceDate = datetime.strptime(str(date_time)[0:10], '%Y-%m-%d') - timedelta(days=1)
-    accidentTime = str(date_time)[11:19]
-    tweets_data = []
-
-    if accidentTime < "00:05:00":  # edge case where tweet accidentTime is near midnight
-        tweetCriteria = got.manager.TweetCriteria().setSince(str(sinceDate)[0:10]).setUntil(str(untilDate)[0:10]) \
-            .setQuerySearch("Accident").setNear(str(longitude) + ", " + str(latitude)).setMaxTweets(100)  # searches
-        tweets = got.manager.TweetManager.getTweets(tweetCriteria)  # stores results
-        for new_tweet in tweets:
-            tweets_data.append(get_tweet_data(new_tweet))  # stores in a list of dicts
-            # if is_time_between(accidentTime, str(tweet.time)[11:19], midnight=True):
-            #     tweets_data.append(get_tweet_data(tweet))  # stores in a list of dicts
-    else:
-        tweetCriteria = got.manager.TweetCriteria().setQuerySearch("Accident") \
-            .setNear(str(longitude) + ", " + str(latitude)).setMaxTweets(100).setSince(str(sinceDate)[0:10]) \
-            .setUntil(str(untilDate)[0:10])  # searches
-        tweets = got.manager.TweetManager.getTweets(tweetCriteria)  # stores results
-        for new_tweet in tweets:
-            tweets_data.append(get_tweet_data(new_tweet))  # stores in a list of dicts
-            # if is_time_between(accidentTime, str(tweet.date)[11:19], midnight=False):
-            #     tweets_data.append(get_tweet_data(tweet))
-    return tweets_data
-
-
-def is_time_between(check_time, tweet_time, midnight):  # compares tweet time if it is in range
-    if midnight:  # edge case
-        begin_time = "23:55:00"
-        end_time = str(datetime.strptime(check_time, '%H:%M:%S') + timedelta(minutes=30))
-        return tweet_time >= begin_time or tweet_time <= end_time
-    else:
-        begin_time = str(datetime.strptime(check_time, '%H:%M:%S') - timedelta(minutes=5))[11:19]
-        end_time = str(datetime.strptime(check_time, '%H:%M:%S') + timedelta(minutes=20))[11:19]
-        return begin_time <= tweet_time <= end_time
+def store_results_in_file(results):  # Stores into a json and csv
+    new_data = []
+    with open('XXXX.json') as File:
+        for tweet in File:
+            new_data.append(json.loads(tweet))
+    new_data.append(results)
+    with open('XXXX.json', 'w') as File:
+        for x in new_data:
+            json.dump(x, File)
+            File.write('\n')
 
 
 def get_tweet_data(tweet):  # returns dict of the tweet's data
     tweet_data = {
-        'id': str(tweet.id),
+        'id_str': str(tweet.id),
         'link': str(tweet.permalink),
         'username': str(tweet.username),
         'to': str(tweet.to),
         'text': str(tweet.text),
-        'date': str(tweet.date),
+        'created_at': str(tweet.date),
         'retweets': str(tweet.retweets),
         'favorites': str(tweet.favorites),
         'mentions': str(tweet.mentions),
         'hashtags': str(tweet.hashtags),
-        'geo': str(tweet.geo)
+        'geo': str(tweet.geo),
+        'url': "https://twitter.com/" + str(tweet.username) + "/status/" + str(tweet.id)
     }
     return tweet_data
 
 
-def get_useable_datetime(accidentDate, accidentTime):
-    accidentDate = datetime.strptime(accidentDate, '%m/%d/%y').strftime('%Y-%m-%d')
-    accidentTime = datetime.strptime(accidentTime, '%I:%M %p').strftime('%H:%M')
-    return datetime.strptime(accidentDate + " " + accidentTime + ":00", '%Y-%m-%d %H:%M:%S')
+def API():  # authenticates with tweepy
+    authenticator = tweepy.OAuthHandler(consumer_api_key, consumer_api_key_secret)
+    api = tweepy.API(authenticator)
+    return api
 
 
-def get_incident_info(incidentData, x):
-    incidentData_dict = {'location': incidentData[x]['maps_output'][0]['geometry']['location'],
-                         'time': incidentData[x]['time'],
-                         'incident_id': incidentData[x]['id'],
-                         'date': incidentData[x]['date']}
-    return incidentData_dict
+def store_in_mongoDB(single_dict):  # takes in one dict
+    collection.insert_one(single_dict)
 
 
-def store_results_in_file(result, incident_id):  # Stores into a json and csv
-    new_data = []
-    with open('tweets_v2.json') as File:
-        for tweet in File:
-            new_data.append(json.loads(tweet))
-
-    result = {"Incident_id": incident_id, 'Tweet Number': len(result), 'Twitter Data': result}
-    new_data.append(result)
-
-    with open('tweets_v2.json', 'w') as File:
-        for y in new_data:
-            json.dump(y, File)
-            File.write('\n')
+def get_file_data(file_name):
+    with open(file_name, "r") as read:
+        fileData = json.load(read)
+    return fileData
 
 
 if __name__ == '__main__':
-    with open("reported_incidents_v2.json", "r") as read:
-        data = json.load(read)
+    tweets_got = []
+    tweets_api = []
+    tweets_api_ids = []
 
-    for x in range(len(data)):
-        try:
-            incidentData = get_incident_info(data, x)
-            results = get_tweets(incidentData['location']['lat'], incidentData['location']['lng'],
-                                 get_useable_datetime(incidentData['date'], incidentData['time']))
-            store_results_in_file(results, incidentData['incident_id'])
-        except:
-            print("Error in location, time, date, or incident_id for iteration: ", x)
+    query = "Accident"
+    place = "Dallas, TX"
+    lang = "en"
+    misc = "-is:retweet"
+
+    search_query = {'Search Query': query + " place:\"" + place + "\" lang:" + lang + " " + misc}
+    requestDates = get_file_data("XXXX.json")
+
+    for date in requestDates:
+        tweets_to_store = []
+        api_sinceDate = date['Since'].replace('-', '') + "0000"
+        api_untilDate = date['Until'].replace('-', '') + "0000"
+
+        tweetCriteria = got.manager.TweetCriteria() \
+            .setQuerySearch(query) \
+            .setNear(place) \
+            .setMaxTweets(0) \
+            .setSince(date['Since']) \
+            .setUntil(date['Until']) \
+            .setLang(lang)
+        tweets = got.manager.TweetManager.getTweets(tweetCriteria)
+
+        for tweet in tweets:
+            tweet_raw = get_tweet_data(tweet)
+            tweet_raw.update(search_query)
+            tweets_got.append(tweet_raw)
+
+        for tweet in tweepy.Cursor(API().search_full_archive,
+                                   query=search_query['Search Query'],
+                                   environment_name=LABEL,
+                                   maxResults=500,
+                                   fromDate=api_sinceDate,
+                                   toDate=api_untilDate).items():
+            tweet_raw = tweet._json
+            tweet_raw.update(search_query)
+            tweets_api.append(tweet_raw)
+            tweets_api_ids.append(tweet_raw["id_str"])
+
+        for tweet in tweets_got:
+            if tweet["id_str"] not in tweets_api_ids:
+                tweets_to_store.append(tweet)
+
+        for tweet in tweets_to_store:
+            store_in_mongoDB(tweet)
