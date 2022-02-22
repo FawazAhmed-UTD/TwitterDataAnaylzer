@@ -12,12 +12,12 @@ from elasticsearch import Elasticsearch
 from geopy.geocoders import Nominatim
 from pymongo import MongoClient
 
-es = Elasticsearch(hosts=["149.165.157.107"])
+es = Elasticsearch(hosts=[""])
 # auth for twitter
-accessToken = "3939721633-EJIfdOWAcuWVjwFpsQp7Qs3P5NNyh3q7ihpC9ld"
-accessToken_Secret = "wyQ9uA8vZ02Ni2fimTJegOSdIJTO95ttIJWWkDZUxl5cZ"
-apiKey = "8VQzfyd9REr8gO2nesBRkJTru"
-apiKey_Secret = "2CS4iYIdBq6SNSmTJCWUFJuhOjAkN4b68bXkOIS7nYouuh7r8n"
+accessToken = ""
+accessToken_Secret = ""
+apiKey = ""
+apiKey_Secret = ""
 radius = 11  # average radius of the cities
 numInc = 0
 location = ""
