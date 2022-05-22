@@ -4,3 +4,4 @@ Twitter_Searcher.py is main program
 tweets.json and tweets.csv are sample outputs
 
 Old_Twitter_Searcher.py uses tweepy and GetOldTweets3 to get tweets within certain dates, compares them, and stores them in mongoDB or a json file if you choose.
+![image](https://user-images.githubusercontent.com/52136572/169713702-0ff5c44e-2bb1-4b67-89aa-a1e772bfec37.png)
