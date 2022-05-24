@@ -11,3 +11,6 @@ Figure below illustrates the processes/steps done for this project
 ![image](https://user-images.githubusercontent.com/52136572/169713702-0ff5c44e-2bb1-4b67-89aa-a1e772bfec37.png)
 
 
+Image from what would have been shown from Kibana on geolocation data:
+
+![image](https://user-images.githubusercontent.com/52136572/170064388-272ad843-78a8-499b-a352-fdc4b97e832c.png)
